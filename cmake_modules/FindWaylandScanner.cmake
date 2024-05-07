@@ -17,7 +17,7 @@ mark_as_advanced(WAYLAND_SCANNER_EXECUTABLE)
 
 # Function to add Wayland client protocol files
 function(add_wayland_client_protocol target xmlfile basename)
-    set(client_header "${PROJECT_SOURCE_DIR}/${basename}-clients-protocol.h")
+    set(client_header "${CMAKE_CURRENT_BINARY_DIR}/${basename}-client-protocol.h")
     set(client_code "${CMAKE_CURRENT_BINARY_DIR}/${basename}-protocol.c")
     set_source_files_properties(${client_header} GENERATED)
     set_source_files_properties(${client_code} GENERATED)
