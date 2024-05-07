@@ -1,8 +1,8 @@
 #include <private/backend/wayland/platformwindow.h>
 
 int main() {
-    struct rp_wayland_xdg_client client = {0};
-    init_wayland_xdg_client(&client);
+    rp_wayland_xdg_client client = {0};
+    __rp_init_wayland_xdg_client(&client);
 
     // Your application logic here
     while (1) {

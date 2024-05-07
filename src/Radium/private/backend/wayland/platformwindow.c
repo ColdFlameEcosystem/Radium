@@ -1,8 +1,16 @@
+/**
+ * @file platformwindow.c
+ * @author Yegender Kumar
+ * @date May 2024
+ * @brief Wayland backend for the Radium
+*/
+
+
 #include <private/backend/wayland/platformwindow.h>
 #include <stdio.h>
 
 static void registry_handle_global(void *data, struct wl_registry *registry, uint32_t name, const char *interface, uint32_t version) {
-    struct rp_wayland_xdg_client *client = data;
+    rp_wayland_xdg_client *client = data;
 
     if (strcmp(interface, wl_compositor_interface.name) == 0) {
         client->compositor = wl_registry_bind(registry, name, &wl_compositor_interface, 1);
@@ -16,7 +24,7 @@ static const struct wl_registry_listener registry_listener = {
     .global_remove = NULL,
 };
 
-void init_wayland_xdg_client(struct rp_wayland_xdg_client *client) {
+void __rp_init_wayland_xdg_client(rp_wayland_xdg_client *client) {
     client->display = wl_display_connect(NULL);
     if (!client->display) {
         fprintf(stderr, "Failed to connect to Wayland display\n");
