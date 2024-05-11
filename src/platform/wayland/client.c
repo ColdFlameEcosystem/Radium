@@ -6,12 +6,13 @@
 #include <string.h>
 #include <sys/mman.h>
 #include <unistd.h>
+#include <png.h>
 
-
-uint8_t c = 0;
-uint8_t f = 1;
 void draw(Client *client) {
-    memset(client->pixel,  c, client->width * client->height * 4);
+    uint32_t *pixel = (uint32_t *)client->pixel;
+    for (int i = 0; i <= client->width * client->height; i++) {
+        pixel[i] = 0xff888888;
+    }
     wl_surface_attach(client->wlSurface, client->Buffer, 0, 0);
     wl_surface_damage_buffer(client->wlSurface, 0, 0, client->width, client->height);
     wl_surface_commit(client->wlSurface);
@@ -27,14 +28,6 @@ void doneCallback(void *data,
     wl_callback_destroy(wl_callback);
     wl_callback = wl_surface_frame(client->wlSurface);
     wl_callback_add_listener(wl_callback, &wlCallbackListener, client);
-
-    if (f) {
-        c++;
-        if (c == 255) {f = 0;}
-    } else {
-        c--;
-        if (c == 0) {f = 1;}
-    }
     draw(client);
 }
 
@@ -95,6 +88,8 @@ void registryGlobal (void *data,
     }
     else if(!strcmp(interface, wl_shm_interface.name)) {
         client->sharedMemory = wl_registry_bind(registry, name, &wl_shm_interface, 1);
+    } else if(!strcmp(interface, zxdg_decoration_manager_v1_interface.name)) {
+        client->decorationManager = wl_registry_bind(registry, name, &zxdg_decoration_manager_v1_interface, 1);
     }
 }
 
@@ -104,6 +99,15 @@ void xdg_toplevel_configure(void *data,
                             int32_t height,
                             struct wl_array *states) {
     Client* client = (Client *) data;
+    if (!width && !height) {
+        return;
+    }
+    if (client->width != width || client->height != height) {
+        client->width = width;
+        client->height = height;
+        //munmap(client->pixel, client->width * client->height * 4);
+        resize(client);
+    }
 };
 
 void xdg_toplevel_close(void *data,
@@ -128,9 +132,25 @@ struct wl_registry_listener registryListener = {
     .global_remove = registryGlobalRemove
 };
 
+void configureDecoration(void *data,
+                        struct zxdg_toplevel_decoration_v1 *zxdg_toplevel_decoration_v1,
+                        uint32_t mode) {
+
+}
+
+struct zxdg_toplevel_decoration_v1_listener decorationListener = {
+    .configure = configureDecoration
+};
+void initServerDecoration(Client *client) {
+    client->topLevelDecoration = zxdg_decoration_manager_v1_get_toplevel_decoration(client->decorationManager, client->xdgToplevel);
+    zxdg_toplevel_decoration_v1_add_listener(client->topLevelDecoration, &decorationListener, client);
+}
+
 Client* createClient() {
     Client* client = (Client*) malloc(sizeof(Client));
     client->close = 0;
+    client->width = 1024;
+    client->height = 768;
     client->Display = wl_display_connect(NULL);
     if (client->Display == NULL) {
         printf("I am failed to connect to the display\n");
@@ -157,10 +177,8 @@ Client* createClient() {
     client->xdgToplevel = xdg_surface_get_toplevel(client->xdgSurface);
     xdg_toplevel_add_listener(client->xdgToplevel, &xdgToplevelListener, client);
 
+    initServerDecoration(client);
     wl_surface_commit(client->wlSurface);
-
-    client->width = 1024;
-    client->height = 768;
     return client;
 };
 
@@ -172,10 +190,13 @@ void execClient(Client *client) {
 
 void nukeClient(Client* client) {
     if (client->Buffer) wl_buffer_destroy(client->Buffer);
+    if (client->topLevelDecoration) zxdg_toplevel_decoration_v1_destroy(client->topLevelDecoration);
+    if (client->decorationManager) zxdg_decoration_manager_v1_destroy(client->decorationManager);
     xdg_toplevel_destroy(client->xdgToplevel);
     xdg_surface_destroy(client->xdgSurface);
     wl_surface_destroy(client->wlSurface);
     wl_registry_destroy(client->Registry);
     wl_display_disconnect(client->Display);
+    printf("%u", *client->pixel);
     free(client);
 }
