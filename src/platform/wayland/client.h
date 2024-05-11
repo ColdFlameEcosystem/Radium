@@ -2,6 +2,7 @@
 
 #include <wayland-client.h>
 #include <xdg-shell-client-protocol.h>
+#include <xdg-decoration-client-protocol.h>
 
 typedef struct Client Client;
 
@@ -20,6 +21,9 @@ struct Client {
     struct xdg_surface* xdgSurface;
     struct wl_callback* callback;
     int close;
+
+    struct zxdg_decoration_manager_v1* decorationManager;
+    struct zxdg_toplevel_decoration_v1* topLevelDecoration;
 };
 
 Client* createClient();
