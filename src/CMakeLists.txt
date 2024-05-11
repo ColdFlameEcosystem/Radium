@@ -1,5 +1,5 @@
 # Backend
-# add_subdirectory(Radium/private/backend)
+add_subdirectory(platform)
 
 # Radium Core
-add_subdirectory(RadiumCore)
+add_subdirectory(core)

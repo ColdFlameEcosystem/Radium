@@ -1,8 +1,7 @@
 # Wayland Window Test
-# add_subdirectory(backend)
+add_subdirectory(wayland-client)
 
 # Widget Gallery Test
 # add_subdirectory(ui)
 
-# Base Object
-add_subdirectory(signals_slots)
+# add_subdirectory(signals_slots)
