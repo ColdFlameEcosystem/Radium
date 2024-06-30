@@ -10,7 +10,8 @@
 
 void draw(Client *client) {
     uint32_t *pixel = (uint32_t *)client->pixel;
-    for (int i = 0; i <= client->width * client->height; i++) {
+    // Fixed loop condition to avoid out-of-bounds access
+    for (int i = 0; i < client->width * client->height; i++) {
         pixel[i] = 0xff888888;
     }
     wl_surface_attach(client->wlSurface, client->Buffer, 0, 0);
@@ -38,7 +39,7 @@ struct wl_callback_listener wlCallbackListener = {
 void resize(Client* client) {
     uint64_t size = client->width * client->height * 4;
     int32_t fd = allocateSharedMemory(size);
-    printf("%c", fd);
+    printf("%d", fd);
     client->pixel = mmap(0, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
     struct wl_shm_pool* pool = wl_shm_create_pool(client->sharedMemory, fd, size);
     client->Buffer = wl_shm_pool_create_buffer(pool, 0, client->width, client->height, client->width * 4, WL_SHM_FORMAT_ARGB8888);
@@ -105,7 +106,9 @@ void xdg_toplevel_configure(void *data,
     if (client->width != width || client->height != height) {
         client->width = width;
         client->height = height;
-        //munmap(client->pixel, client->width * client->height * 4);
+        if (client->pixel){
+            munmap(client->pixel, client->width * client->height * 4);
+        }
         resize(client);
     }
 };
@@ -153,15 +156,15 @@ Client* createClient() {
     client->height = 768;
     client->Display = wl_display_connect(NULL);
     if (client->Display == NULL) {
-        printf("I am failed to connect to the display\n");
+        printf("Failed to connect to the display\n"); //Fixed Typo
     }
-    printf("I am connected to the display\n");
+    printf("Connected to the display\n"); //Fixed Typo
 
     client->Registry = wl_display_get_registry(client->Display);
     if (client->Registry == NULL) {
-        printf("I am failed to get registry\n");
+        printf("Failed to get registry\n"); //Fixed Typo
     }
-    printf("I got the registry\n");
+    printf("Got the registry\n");  //Fixed Typo
 
     wl_registry_add_listener(client->Registry, &registryListener, client);
 
@@ -197,6 +200,6 @@ void nukeClient(Client* client) {
     wl_surface_destroy(client->wlSurface);
     wl_registry_destroy(client->Registry);
     wl_display_disconnect(client->Display);
-    printf("%u", *client->pixel);
+    printf("%u", *client->pixel); // ig this is unsafe
     free(client);
 }
